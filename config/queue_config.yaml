@@ -1,0 +1,68 @@
+# Delay Queue Configuration for Azure Databricks
+
+# Delta Lake Settings
+delta:
+  queue_table_path: "/mnt/datalake/delay_queue/tasks"
+  audit_log_path: "/mnt/datalake/delay_queue/audit_logs"
+  reconciliation_results_path: "/mnt/datalake/delay_queue/reconciliation_results"
+  checkpoint_location: "/mnt/datalake/delay_queue/checkpoints"
+
+# Exponential Backoff Settings
+backoff:
+  initial_delay_seconds: 60          # Start with 1 minute delay
+  max_delay_seconds: 3600            # Cap at 1 hour
+  exponential_base: 2                # Delay multiplier (2^retry_count)
+  max_retries: 5                     # Maximum retry attempts
+  jitter_factor: 0.1                 # Add randomness to prevent thundering herd
+
+# Queue Processing Settings
+queue:
+  polling_interval_seconds: 30       # How often to check for ready tasks
+  batch_size: 10                     # Process N tasks per batch
+  visibility_timeout_seconds: 900    # Lock task for 15 minutes during processing
+  dead_letter_threshold: 5           # Move to DLQ after N failures
+
+# Migration Job Settings
+migration:
+  csv_source_path: "/mnt/legacy/csv_exports"
+  delta_target_path: "/mnt/datalake/migrated_data"
+  max_parallel_migrations: 5
+  chunk_size_mb: 100
+  enable_optimization: true
+  enable_vacuum: false                # Manual vacuum recommended
+
+# Reconciliation Settings
+reconciliation:
+  enable_auto_reconciliation: true
+  reconciliation_delay_seconds: 60   # Wait before running reconciliation
+  tolerance_threshold: 0.0001        # Allowed difference for numeric comparisons
+  required_checks:
+    - row_count
+    - column_checksums
+    - key_sums
+    - null_counts
+  key_sum_columns:                   # Columns to sum for validation
+    - total_revenue
+    - total_patients
+    - transaction_amount
+
+# Monitoring & Alerting
+monitoring:
+  enable_metrics: true
+  metrics_table_path: "/mnt/datalake/delay_queue/metrics"
+  alert_on_dlq: true
+  alert_on_consecutive_failures: 3
+  health_check_interval_seconds: 300
+
+# Network Resilience
+network:
+  connection_timeout_seconds: 300
+  read_timeout_seconds: 600
+  max_network_retries: 4
+  network_backoff_seconds: [2, 4, 8, 16]  # Exponential backoff for network
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  include_stack_trace: true

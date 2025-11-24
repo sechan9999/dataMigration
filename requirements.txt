@@ -1,0 +1,7 @@
+pyspark>=3.4.0
+delta-spark>=2.4.0
+azure-storage-blob>=12.19.0
+azure-identity>=1.15.0
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+tenacity>=8.2.3
