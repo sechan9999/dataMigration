@@ -1,0 +1,48 @@
+{
+  "name": "ds_watermark_table",
+  "properties": {
+    "linkedServiceName": {
+      "referenceName": "ls_target_sql_analytics",
+      "type": "LinkedServiceReference",
+      "parameters": {
+        "serverName": {
+          "value": "@dataset().serverName",
+          "type": "Expression"
+        },
+        "databaseName": {
+          "value": "@dataset().databaseName",
+          "type": "Expression"
+        }
+      }
+    },
+    "parameters": {
+      "serverName": {
+        "type": "string"
+      },
+      "databaseName": {
+        "type": "string"
+      }
+    },
+    "annotations": [],
+    "type": "AzureSqlTable",
+    "schema": [
+      {
+        "name": "TableName",
+        "type": "nvarchar"
+      },
+      {
+        "name": "WatermarkValue",
+        "type": "datetime"
+      },
+      {
+        "name": "LastProcessedDate",
+        "type": "datetime"
+      }
+    ],
+    "typeProperties": {
+      "schema": "etl",
+      "table": "Watermark"
+    }
+  },
+  "type": "Microsoft.DataFactory/factories/datasets"
+}

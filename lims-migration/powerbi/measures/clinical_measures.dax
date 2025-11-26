@@ -1,0 +1,374 @@
+-- =====================================================
+-- LIMS Analytics - DAX Measures
+-- Clinical KPIs and Metrics for Power BI
+-- =====================================================
+
+-- =====================================================
+-- Volume Metrics
+-- =====================================================
+
+Total Lab Results =
+COUNTROWS(FactLabResult)
+
+Total Patients =
+DISTINCTCOUNT(FactLabResult[PatientKey])
+
+Total Tests =
+DISTINCTCOUNT(FactLabResult[TestKey])
+
+Total Orders =
+DISTINCTCOUNT(FactLabResult[OrderId])
+
+-- =====================================================
+-- Quality Metrics
+-- =====================================================
+
+Critical Values =
+CALCULATE(
+    COUNTROWS(FactLabResult),
+    FactLabResult[CriticalFlag] = TRUE
+)
+
+Critical Value Rate =
+DIVIDE(
+    [Critical Values],
+    [Total Lab Results],
+    0
+)
+
+Out of Range Results =
+CALCULATE(
+    COUNTROWS(FactLabResult),
+    FactLabResult[IsOutOfRange] = TRUE
+)
+
+Out of Range Rate =
+DIVIDE(
+    [Out of Range Results],
+    [Total Lab Results],
+    0
+)
+
+Anomalous Results =
+CALCULATE(
+    COUNTROWS(FactLabResult),
+    FactLabResult[IsAnomaly] = TRUE
+)
+
+Anomaly Rate =
+DIVIDE(
+    [Anomalous Results],
+    [Total Lab Results],
+    0
+)
+
+Average Anomaly Score =
+AVERAGE(FactLabResult[AnomalyScore])
+
+-- =====================================================
+-- Turnaround Time Metrics
+-- =====================================================
+
+Average Turnaround Time (Hours) =
+DIVIDE(
+    AVERAGE(FactLabResult[TurnaroundTimeMinutes]),
+    60,
+    0
+)
+
+Median Turnaround Time (Hours) =
+DIVIDE(
+    MEDIAN(FactLabResult[TurnaroundTimeMinutes]),
+    60,
+    0
+)
+
+Turnaround Time SLA Met =
+VAR SLAThresholdMinutes = 240  -- 4 hours
+RETURN
+DIVIDE(
+    CALCULATE(
+        COUNTROWS(FactLabResult),
+        FactLabResult[TurnaroundTimeMinutes] <= SLAThresholdMinutes
+    ),
+    [Total Lab Results],
+    0
+)
+
+-- =====================================================
+-- Trending Metrics
+-- =====================================================
+
+Total Lab Results MTD =
+TOTALMTD(
+    [Total Lab Results],
+    DimDate[Date]
+)
+
+Total Lab Results YTD =
+TOTALYTD(
+    [Total Lab Results],
+    DimDate[Date]
+)
+
+Total Lab Results Previous Month =
+CALCULATE(
+    [Total Lab Results],
+    DATEADD(DimDate[Date], -1, MONTH)
+)
+
+Lab Results MoM Growth =
+VAR CurrentMonth = [Total Lab Results]
+VAR PreviousMonth = [Total Lab Results Previous Month]
+RETURN
+DIVIDE(
+    CurrentMonth - PreviousMonth,
+    PreviousMonth,
+    0
+)
+
+Lab Results MoM Growth % =
+FORMAT([Lab Results MoM Growth], "0.0%")
+
+-- =====================================================
+-- Patient-Specific Metrics
+-- =====================================================
+
+Tests Per Patient =
+DIVIDE(
+    [Total Lab Results],
+    [Total Patients],
+    0
+)
+
+Average Patient Test Frequency (Days) =
+AVERAGEX(
+    SUMMARIZE(
+        FactLabResult,
+        FactLabResult[PatientKey],
+        FactLabResult[ResultDateKey],
+        "TestsPerDay", COUNT(FactLabResult[LabResultKey])
+    ),
+    [TestsPerDay]
+)
+
+Patients with Critical Values =
+CALCULATE(
+    DISTINCTCOUNT(FactLabResult[PatientKey]),
+    FactLabResult[CriticalFlag] = TRUE
+)
+
+-- =====================================================
+-- Test-Specific Metrics
+-- =====================================================
+
+Most Common Test =
+CALCULATE(
+    FIRSTNONBLANK(DimTest[TestName], 1),
+    TOPN(
+        1,
+        SUMMARIZE(
+            FactLabResult,
+            DimTest[TestName],
+            "TestCount", COUNTROWS(FactLabResult)
+        ),
+        [TestCount],
+        DESC
+    )
+)
+
+Test Utilization Rate =
+VAR TotalPossibleTests = [Total Patients] * [Total Tests]
+RETURN
+DIVIDE(
+    [Total Lab Results],
+    TotalPossibleTests,
+    0
+)
+
+-- =====================================================
+-- Clinical Validation Metrics
+-- =====================================================
+
+Validation Pass Rate =
+DIVIDE(
+    CALCULATE(
+        COUNTROWS(FactLabResult),
+        FactLabResult[ReferenceRangeValid] = TRUE,
+        FactLabResult[TemporalConsistencyValid] = TRUE,
+        FactLabResult[SpecimenValid] = TRUE
+    ),
+    [Total Lab Results],
+    0
+)
+
+Reference Range Violations =
+CALCULATE(
+    COUNTROWS(FactLabResult),
+    FactLabResult[ReferenceRangeValid] = FALSE
+)
+
+Temporal Consistency Issues =
+CALCULATE(
+    COUNTROWS(FactLabResult),
+    FactLabResult[TemporalConsistencyValid] = FALSE
+)
+
+Specimen Validity Issues =
+CALCULATE(
+    COUNTROWS(FactLabResult),
+    FactLabResult[SpecimenValid] = FALSE
+)
+
+-- =====================================================
+-- Advanced Analytics
+-- =====================================================
+
+Result Value Distribution =
+PERCENTILEX.INC(
+    FactLabResult,
+    FactLabResult[ResultValueNumeric],
+    0.5  -- Median
+)
+
+Result Value P95 =
+PERCENTILEX.INC(
+    FactLabResult,
+    FactLabResult[ResultValueNumeric],
+    0.95
+)
+
+Result Value P99 =
+PERCENTILEX.INC(
+    FactLabResult,
+    FactLabResult[ResultValueNumeric],
+    0.99
+)
+
+-- =====================================================
+-- Time Intelligence
+-- =====================================================
+
+Lab Results Same Period Last Year =
+CALCULATE(
+    [Total Lab Results],
+    SAMEPERIODLASTYEAR(DimDate[Date])
+)
+
+Lab Results YoY Growth % =
+VAR CurrentYear = [Total Lab Results]
+VAR LastYear = [Lab Results Same Period Last Year]
+RETURN
+DIVIDE(
+    CurrentYear - LastYear,
+    LastYear,
+    0
+)
+
+-- =====================================================
+-- Calculated Columns (if needed in semantic model)
+-- =====================================================
+
+-- For FactLabResult table:
+/*
+Result Category =
+SWITCH(
+    TRUE(),
+    FactLabResult[CriticalFlag] = TRUE, "Critical",
+    FactLabResult[IsOutOfRange] = TRUE, "Out of Range",
+    FactLabResult[IsAnomaly] = TRUE, "Anomalous",
+    "Normal"
+)
+
+Turnaround Time Category =
+SWITCH(
+    TRUE(),
+    FactLabResult[TurnaroundTimeMinutes] <= 120, "< 2 hours",
+    FactLabResult[TurnaroundTimeMinutes] <= 240, "2-4 hours",
+    FactLabResult[TurnaroundTimeMinutes] <= 480, "4-8 hours",
+    "> 8 hours"
+)
+*/
+
+-- =====================================================
+-- Data Quality Metrics
+-- =====================================================
+
+Data Completeness =
+VAR TotalResults = [Total Lab Results]
+VAR CompleteResults =
+    CALCULATE(
+        COUNTROWS(FactLabResult),
+        NOT(ISBLANK(FactLabResult[ResultValueNumeric])),
+        NOT(ISBLANK(FactLabResult[ResultDateKey])),
+        NOT(ISBLANK(FactLabResult[PatientKey]))
+    )
+RETURN
+DIVIDE(CompleteResults, TotalResults, 0)
+
+Missing Result Values =
+CALCULATE(
+    COUNTROWS(FactLabResult),
+    ISBLANK(FactLabResult[ResultValueNumeric])
+)
+
+-- =====================================================
+-- Lab Performance Metrics
+-- =====================================================
+
+Average Daily Volume =
+AVERAGEX(
+    VALUES(DimDate[Date]),
+    [Total Lab Results]
+)
+
+Peak Daily Volume =
+MAXX(
+    VALUES(DimDate[Date]),
+    [Total Lab Results]
+)
+
+-- =====================================================
+-- Custom Formatting Measures
+-- =====================================================
+
+TAT Display =
+FORMAT([Average Turnaround Time (Hours)], "0.0") & " hrs"
+
+Volume Trend Indicator =
+VAR Growth = [Lab Results MoM Growth]
+RETURN
+SWITCH(
+    TRUE(),
+    Growth > 0.1, "↑ Growing",
+    Growth < -0.1, "↓ Declining",
+    "→ Stable"
+)
+
+Quality Score =
+VAR ValidationRate = [Validation Pass Rate]
+VAR CriticalRate = 1 - [Critical Value Rate]
+VAR AnomalyRate = 1 - [Anomaly Rate]
+RETURN
+(ValidationRate * 0.4) + (CriticalRate * 0.3) + (AnomalyRate * 0.3)
+
+Quality Score Display =
+FORMAT([Quality Score], "0.0%")
+
+-- =====================================================
+-- Conditional Formatting Helpers
+-- =====================================================
+
+Critical Value Color =
+IF(
+    [Critical Value Rate] > 0.05,
+    "Red",
+    IF([Critical Value Rate] > 0.02, "Yellow", "Green")
+)
+
+TAT Performance Color =
+IF(
+    [Turnaround Time SLA Met] < 0.80,
+    "Red",
+    IF([Turnaround Time SLA Met] < 0.90, "Yellow", "Green")
+)

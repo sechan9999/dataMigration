@@ -1,0 +1,409 @@
+{
+  "name": "pl_master_lims_orchestration",
+  "properties": {
+    "activities": [
+      {
+        "name": "For Each LIMS Table",
+        "type": "ForEach",
+        "dependsOn": [],
+        "userProperties": [],
+        "typeProperties": {
+          "items": {
+            "value": "@pipeline().parameters.tables",
+            "type": "Expression"
+          },
+          "isSequential": false,
+          "batchCount": 4,
+          "activities": [
+            {
+              "name": "Execute Incremental Load",
+              "type": "ExecutePipeline",
+              "dependsOn": [],
+              "userProperties": [],
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "pl_incremental_load_with_cdc",
+                  "type": "PipelineReference"
+                },
+                "waitOnCompletion": true,
+                "parameters": {
+                  "sourceServerName": {
+                    "value": "@pipeline().parameters.sourceServerName",
+                    "type": "Expression"
+                  },
+                  "sourceDatabaseName": {
+                    "value": "@pipeline().parameters.sourceDatabaseName",
+                    "type": "Expression"
+                  },
+                  "targetServerName": {
+                    "value": "@pipeline().parameters.targetServerName",
+                    "type": "Expression"
+                  },
+                  "targetDatabaseName": {
+                    "value": "@pipeline().parameters.targetDatabaseName",
+                    "type": "Expression"
+                  },
+                  "schemaName": {
+                    "value": "@item().schema",
+                    "type": "Expression"
+                  },
+                  "tableName": {
+                    "value": "@item().table",
+                    "type": "Expression"
+                  },
+                  "watermarkColumn": {
+                    "value": "@item().watermarkColumn",
+                    "type": "Expression"
+                  },
+                  "storageAccountName": {
+                    "value": "@pipeline().parameters.storageAccountName",
+                    "type": "Expression"
+                  },
+                  "databricksWorkspaceUrl": {
+                    "value": "@pipeline().parameters.databricksWorkspaceUrl",
+                    "type": "Expression"
+                  },
+                  "databricksWorkspaceName": {
+                    "value": "@pipeline().parameters.databricksWorkspaceName",
+                    "type": "Expression"
+                  },
+                  "databricksClusterId": {
+                    "value": "@pipeline().parameters.databricksClusterId",
+                    "type": "Expression"
+                  },
+                  "subscriptionId": {
+                    "value": "@pipeline().parameters.subscriptionId",
+                    "type": "Expression"
+                  },
+                  "resourceGroup": {
+                    "value": "@pipeline().parameters.resourceGroup",
+                    "type": "Expression"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Clinical Validation",
+        "type": "DatabricksNotebook",
+        "dependsOn": [
+          {
+            "activity": "For Each LIMS Table",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/LIMS/validation/clinical_validation_suite",
+          "baseParameters": {
+            "load_date": {
+              "value": "@formatDateTime(utcnow(), 'yyyy-MM-dd')",
+              "type": "Expression"
+            }
+          }
+        },
+        "linkedServiceName": {
+          "referenceName": "ls_databricks",
+          "type": "LinkedServiceReference",
+          "parameters": {
+            "workspaceUrl": {
+              "value": "@pipeline().parameters.databricksWorkspaceUrl",
+              "type": "Expression"
+            },
+            "workspaceName": {
+              "value": "@pipeline().parameters.databricksWorkspaceName",
+              "type": "Expression"
+            },
+            "clusterId": {
+              "value": "@pipeline().parameters.databricksClusterId",
+              "type": "Expression"
+            },
+            "subscriptionId": {
+              "value": "@pipeline().parameters.subscriptionId",
+              "type": "Expression"
+            },
+            "resourceGroup": {
+              "value": "@pipeline().parameters.resourceGroup",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "Silver to Gold Transformation",
+        "type": "DatabricksNotebook",
+        "dependsOn": [
+          {
+            "activity": "Clinical Validation",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/LIMS/silver_to_gold/aggregate_clinical_data",
+          "baseParameters": {
+            "load_date": {
+              "value": "@formatDateTime(utcnow(), 'yyyy-MM-dd')",
+              "type": "Expression"
+            }
+          }
+        },
+        "linkedServiceName": {
+          "referenceName": "ls_databricks",
+          "type": "LinkedServiceReference",
+          "parameters": {
+            "workspaceUrl": {
+              "value": "@pipeline().parameters.databricksWorkspaceUrl",
+              "type": "Expression"
+            },
+            "workspaceName": {
+              "value": "@pipeline().parameters.databricksWorkspaceName",
+              "type": "Expression"
+            },
+            "clusterId": {
+              "value": "@pipeline().parameters.databricksClusterId",
+              "type": "Expression"
+            },
+            "subscriptionId": {
+              "value": "@pipeline().parameters.subscriptionId",
+              "type": "Expression"
+            },
+            "resourceGroup": {
+              "value": "@pipeline().parameters.resourceGroup",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "ML Anomaly Detection",
+        "type": "DatabricksNotebook",
+        "dependsOn": [
+          {
+            "activity": "Silver to Gold Transformation",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/LIMS/ml/anomaly_detection",
+          "baseParameters": {
+            "load_date": {
+              "value": "@formatDateTime(utcnow(), 'yyyy-MM-dd')",
+              "type": "Expression"
+            },
+            "run_training": "false"
+          }
+        },
+        "linkedServiceName": {
+          "referenceName": "ls_databricks",
+          "type": "LinkedServiceReference",
+          "parameters": {
+            "workspaceUrl": {
+              "value": "@pipeline().parameters.databricksWorkspaceUrl",
+              "type": "Expression"
+            },
+            "workspaceName": {
+              "value": "@pipeline().parameters.databricksWorkspaceName",
+              "type": "Expression"
+            },
+            "clusterId": {
+              "value": "@pipeline().parameters.databricksClusterId",
+              "type": "Expression"
+            },
+            "subscriptionId": {
+              "value": "@pipeline().parameters.subscriptionId",
+              "type": "Expression"
+            },
+            "resourceGroup": {
+              "value": "@pipeline().parameters.resourceGroup",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "Load to SQL Analytics",
+        "type": "DatabricksNotebook",
+        "dependsOn": [
+          {
+            "activity": "ML Anomaly Detection",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "notebookPath": "/Workspace/LIMS/gold_to_sql/load_dimensional_model",
+          "baseParameters": {
+            "load_date": {
+              "value": "@formatDateTime(utcnow(), 'yyyy-MM-dd')",
+              "type": "Expression"
+            },
+            "target_server": {
+              "value": "@pipeline().parameters.targetServerName",
+              "type": "Expression"
+            },
+            "target_database": {
+              "value": "@pipeline().parameters.targetDatabaseName",
+              "type": "Expression"
+            }
+          }
+        },
+        "linkedServiceName": {
+          "referenceName": "ls_databricks",
+          "type": "LinkedServiceReference",
+          "parameters": {
+            "workspaceUrl": {
+              "value": "@pipeline().parameters.databricksWorkspaceUrl",
+              "type": "Expression"
+            },
+            "workspaceName": {
+              "value": "@pipeline().parameters.databricksWorkspaceName",
+              "type": "Expression"
+            },
+            "clusterId": {
+              "value": "@pipeline().parameters.databricksClusterId",
+              "type": "Expression"
+            },
+            "subscriptionId": {
+              "value": "@pipeline().parameters.subscriptionId",
+              "type": "Expression"
+            },
+            "resourceGroup": {
+              "value": "@pipeline().parameters.resourceGroup",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "Send Success Notification",
+        "type": "WebActivity",
+        "dependsOn": [
+          {
+            "activity": "Load to SQL Analytics",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.00:05:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "url": {
+            "value": "@pipeline().parameters.notificationWebhook",
+            "type": "Expression"
+          },
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "value": "@concat('{\"status\": \"SUCCESS\", \"pipeline\": \"', pipeline().Pipeline, '\", \"runId\": \"', pipeline().RunId, '\", \"message\": \"LIMS migration completed successfully\"}')",
+            "type": "Expression"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "tables": {
+        "type": "array",
+        "defaultValue": [
+          {
+            "schema": "dbo",
+            "table": "LabResults",
+            "watermarkColumn": "ModifiedDate"
+          },
+          {
+            "schema": "dbo",
+            "table": "Patients",
+            "watermarkColumn": "ModifiedDate"
+          },
+          {
+            "schema": "dbo",
+            "table": "TestMaster",
+            "watermarkColumn": "ModifiedDate"
+          },
+          {
+            "schema": "dbo",
+            "table": "Specimens",
+            "watermarkColumn": "ModifiedDate"
+          },
+          {
+            "schema": "dbo",
+            "table": "Orders",
+            "watermarkColumn": "ModifiedDate"
+          }
+        ]
+      },
+      "sourceServerName": {
+        "type": "string"
+      },
+      "sourceDatabaseName": {
+        "type": "string"
+      },
+      "targetServerName": {
+        "type": "string"
+      },
+      "targetDatabaseName": {
+        "type": "string"
+      },
+      "storageAccountName": {
+        "type": "string"
+      },
+      "databricksWorkspaceUrl": {
+        "type": "string"
+      },
+      "databricksWorkspaceName": {
+        "type": "string"
+      },
+      "databricksClusterId": {
+        "type": "string"
+      },
+      "subscriptionId": {
+        "type": "string"
+      },
+      "resourceGroup": {
+        "type": "string"
+      },
+      "notificationWebhook": {
+        "type": "string"
+      }
+    },
+    "annotations": []
+  }
+}

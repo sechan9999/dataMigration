@@ -1,0 +1,338 @@
+{
+  "name": "LIMS Analytics",
+  "description": "Clinical laboratory analytics semantic model",
+  "version": "1.0",
+  "compatibilityLevel": 1550,
+  "model": {
+    "culture": "en-US",
+    "dataSources": [
+      {
+        "type": "structured",
+        "name": "LIMS_Analytics_SQL",
+        "connectionDetails": {
+          "protocol": "tds",
+          "address": {
+            "server": "${SQL_SERVER_NAME}.database.windows.net",
+            "database": "LIMS_Analytics"
+          },
+          "authentication": "azureActiveDirectory",
+          "query": null
+        },
+        "credential": {
+          "authenticationType": "OAuth2",
+          "encryptConnection": true,
+          "privacySetting": "organizational"
+        }
+      }
+    ],
+    "tables": [
+      {
+        "name": "FactLabResult",
+        "description": "Lab result fact table",
+        "columns": [
+          {
+            "name": "LabResultKey",
+            "dataType": "int64",
+            "isHidden": true,
+            "sourceColumn": "LabResultKey"
+          },
+          {
+            "name": "PatientKey",
+            "dataType": "int64",
+            "isHidden": true,
+            "sourceColumn": "PatientKey"
+          },
+          {
+            "name": "TestKey",
+            "dataType": "int64",
+            "isHidden": true,
+            "sourceColumn": "TestKey"
+          },
+          {
+            "name": "ResultDateKey",
+            "dataType": "int64",
+            "isHidden": true,
+            "sourceColumn": "ResultDateKey"
+          },
+          {
+            "name": "ResultValueNumeric",
+            "dataType": "double",
+            "sourceColumn": "ResultValueNumeric",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "TurnaroundTimeMinutes",
+            "dataType": "int64",
+            "sourceColumn": "TurnaroundTimeMinutes",
+            "formatString": "#,##0"
+          },
+          {
+            "name": "IsOutOfRange",
+            "dataType": "boolean",
+            "sourceColumn": "IsOutOfRange"
+          },
+          {
+            "name": "CriticalFlag",
+            "dataType": "boolean",
+            "sourceColumn": "CriticalFlag"
+          },
+          {
+            "name": "IsAnomaly",
+            "dataType": "boolean",
+            "sourceColumn": "IsAnomaly"
+          },
+          {
+            "name": "AnomalyScore",
+            "dataType": "double",
+            "sourceColumn": "AnomalyScore",
+            "summarizeBy": "average"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"${SQL_SERVER_NAME}.database.windows.net\", \"LIMS_Analytics\"),",
+                "    dbo_FactLabResult = Source{[Schema=\"fact\",Item=\"FactLabResult\"]}[Data]",
+                "in",
+                "    dbo_FactLabResult"
+              ]
+            }
+          }
+        ],
+        "measures": []
+      },
+      {
+        "name": "DimPatient",
+        "description": "Patient dimension",
+        "columns": [
+          {
+            "name": "PatientKey",
+            "dataType": "int64",
+            "isKey": true,
+            "sourceColumn": "PatientKey"
+          },
+          {
+            "name": "MRN",
+            "dataType": "string",
+            "sourceColumn": "MRN"
+          },
+          {
+            "name": "AgeGroup",
+            "dataType": "string",
+            "sourceColumn": "AgeGroup"
+          },
+          {
+            "name": "Gender",
+            "dataType": "string",
+            "sourceColumn": "Gender"
+          },
+          {
+            "name": "Race",
+            "dataType": "string",
+            "sourceColumn": "Race"
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Patient Demographics",
+            "levels": [
+              {
+                "name": "Age Group",
+                "ordinal": 0,
+                "column": "AgeGroup"
+              },
+              {
+                "name": "Gender",
+                "ordinal": 1,
+                "column": "Gender"
+              },
+              {
+                "name": "Race",
+                "ordinal": 2,
+                "column": "Race"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DimTest",
+        "description": "Test dimension",
+        "columns": [
+          {
+            "name": "TestKey",
+            "dataType": "int64",
+            "isKey": true,
+            "sourceColumn": "TestKey"
+          },
+          {
+            "name": "TestCode",
+            "dataType": "string",
+            "sourceColumn": "TestCode"
+          },
+          {
+            "name": "TestName",
+            "dataType": "string",
+            "sourceColumn": "TestName"
+          },
+          {
+            "name": "TestCategoryHierarchyLevel1",
+            "dataType": "string",
+            "sourceColumn": "TestCategoryHierarchyLevel1"
+          },
+          {
+            "name": "TestCategoryHierarchyLevel2",
+            "dataType": "string",
+            "sourceColumn": "TestCategoryHierarchyLevel2"
+          },
+          {
+            "name": "TestCategoryHierarchyLevel3",
+            "dataType": "string",
+            "sourceColumn": "TestCategoryHierarchyLevel3"
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Test Category Hierarchy",
+            "levels": [
+              {
+                "name": "Level 1",
+                "ordinal": 0,
+                "column": "TestCategoryHierarchyLevel1"
+              },
+              {
+                "name": "Level 2",
+                "ordinal": 1,
+                "column": "TestCategoryHierarchyLevel2"
+              },
+              {
+                "name": "Level 3",
+                "ordinal": 2,
+                "column": "TestCategoryHierarchyLevel3"
+              },
+              {
+                "name": "Test Name",
+                "ordinal": 3,
+                "column": "TestName"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DimDate",
+        "description": "Date dimension",
+        "columns": [
+          {
+            "name": "DateKey",
+            "dataType": "int64",
+            "isKey": true,
+            "sourceColumn": "DateKey"
+          },
+          {
+            "name": "Date",
+            "dataType": "dateTime",
+            "sourceColumn": "Date"
+          },
+          {
+            "name": "Year",
+            "dataType": "int64",
+            "sourceColumn": "Year"
+          },
+          {
+            "name": "Quarter",
+            "dataType": "int64",
+            "sourceColumn": "Quarter"
+          },
+          {
+            "name": "Month",
+            "dataType": "int64",
+            "sourceColumn": "Month"
+          },
+          {
+            "name": "MonthName",
+            "dataType": "string",
+            "sourceColumn": "MonthName"
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Date Hierarchy",
+            "levels": [
+              {
+                "name": "Year",
+                "ordinal": 0,
+                "column": "Year"
+              },
+              {
+                "name": "Quarter",
+                "ordinal": 1,
+                "column": "Quarter"
+              },
+              {
+                "name": "Month",
+                "ordinal": 2,
+                "column": "MonthName"
+              },
+              {
+                "name": "Date",
+                "ordinal": 3,
+                "column": "Date"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "FactLabResult_DimPatient",
+        "fromTable": "FactLabResult",
+        "fromColumn": "PatientKey",
+        "toTable": "DimPatient",
+        "toColumn": "PatientKey",
+        "crossFilteringBehavior": "bothDirections",
+        "securityFilteringBehavior": "bothDirections"
+      },
+      {
+        "name": "FactLabResult_DimTest",
+        "fromTable": "FactLabResult",
+        "fromColumn": "TestKey",
+        "toTable": "DimTest",
+        "toColumn": "TestKey",
+        "crossFilteringBehavior": "bothDirections"
+      },
+      {
+        "name": "FactLabResult_DimDate",
+        "fromTable": "FactLabResult",
+        "fromColumn": "ResultDateKey",
+        "toTable": "DimDate",
+        "toColumn": "DateKey",
+        "crossFilteringBehavior": "bothDirections"
+      }
+    ],
+    "roles": [
+      {
+        "name": "Clinical Staff",
+        "description": "Access to patient data",
+        "modelPermission": "read",
+        "tablePermissions": [
+          {
+            "name": "DimPatient",
+            "filterExpression": "[IsCurrent] = TRUE"
+          }
+        ]
+      },
+      {
+        "name": "Lab Manager",
+        "description": "Full access to lab analytics",
+        "modelPermission": "read"
+      }
+    ]
+  }
+}

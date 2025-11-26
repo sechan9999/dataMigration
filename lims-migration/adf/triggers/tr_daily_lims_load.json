@@ -1,0 +1,37 @@
+{
+  "name": "tr_daily_lims_load",
+  "properties": {
+    "annotations": [],
+    "runtimeState": "Started",
+    "pipelines": [
+      {
+        "pipelineReference": {
+          "referenceName": "pl_master_lims_orchestration",
+          "type": "PipelineReference"
+        },
+        "parameters": {
+          "sourceServerName": "${SOURCE_SERVER_NAME}",
+          "sourceDatabaseName": "LIMS_Production",
+          "targetServerName": "${TARGET_SERVER_NAME}",
+          "targetDatabaseName": "LIMS_Analytics",
+          "storageAccountName": "${STORAGE_ACCOUNT_NAME}",
+          "databricksWorkspaceUrl": "${DATABRICKS_WORKSPACE_URL}",
+          "databricksWorkspaceName": "${DATABRICKS_WORKSPACE_NAME}",
+          "databricksClusterId": "${DATABRICKS_CLUSTER_ID}",
+          "subscriptionId": "${SUBSCRIPTION_ID}",
+          "resourceGroup": "${RESOURCE_GROUP}",
+          "notificationWebhook": "${NOTIFICATION_WEBHOOK}"
+        }
+      }
+    ],
+    "type": "ScheduleTrigger",
+    "typeProperties": {
+      "recurrence": {
+        "frequency": "Hour",
+        "interval": 4,
+        "startTime": "2024-01-01T00:00:00Z",
+        "timeZone": "UTC"
+      }
+    }
+  }
+}
