@@ -1,4 +1,52 @@
-# Production-Grade Delay Queue with Exponential Backoff for Azure Databricks
+# Production Data Systems for Azure Databricks
+
+A comprehensive suite of production-ready systems for:
+1. **Delay Queue with Exponential Backoff** - Reliable data migration with ACID guarantees
+2. **Probabilistic Forecasting System** - Macroeconomic and financial indicator forecasting
+
+---
+
+## 📊 Probabilistic Forecasting System (NEW)
+
+### Overview
+Production-grade probabilistic forecasting for macroeconomic and financial indicators with complete documentation and reasoning.
+
+### Key Features
+- **Probabilistic Outputs**: Full probability distributions with confidence intervals
+- **Multiple Methodologies**: Bayesian, Monte Carlo, Ensemble approaches
+- **Structured Reasoning**: Complete documentation of forecast rationale and assumptions
+- **Expert Calibration**: Consensus building across domain experts
+- **Trend Analysis**: Comprehensive feature extraction and pattern detection
+- **Performance Evaluation**: Rigorous backtesting and accuracy metrics
+
+### Quick Start
+```python
+from forecasting.models import BayesianForecast, ForecastHorizon
+from forecasting.indicators import IndicatorDataSource
+
+# Load data and generate forecast
+data_source = IndicatorDataSource()
+gdp_data = data_source.get_indicator('US_GDP')
+
+model = BayesianForecast(prior_mean=2.5, prior_std=1.0)
+model.fit(gdp_data.values, gdp_data.dates)
+
+forecast = model.forecast(
+    horizon=ForecastHorizon.MEDIUM_TERM,
+    target_date=datetime(2025, 6, 1)
+)
+
+print(f"Forecast: {forecast.point_estimate:.2f}")
+print(f"90% CI: {forecast.distribution.confidence_intervals[0.90]}")
+```
+
+### Documentation
+- 📖 [Complete Documentation](docs/FORECASTING_SYSTEM.md)
+- 📓 [Notebooks](notebooks/forecasting_01_setup.py)
+
+---
+
+## 🚀 Delay Queue System
 
 A complete, production-ready delay queue system designed for reliable data migration with ACID guarantees, exponential backoff retry logic, and comprehensive data validation.
 
