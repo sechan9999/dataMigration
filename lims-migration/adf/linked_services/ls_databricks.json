@@ -1,0 +1,31 @@
+{
+  "name": "ls_databricks",
+  "type": "Microsoft.DataFactory/factories/linkedservices",
+  "properties": {
+    "annotations": [],
+    "type": "AzureDatabricks",
+    "typeProperties": {
+      "domain": "https://@{linkedService().workspaceUrl}",
+      "existingClusterId": "@{linkedService().clusterId}",
+      "authentication": "MSI",
+      "workspaceResourceId": "/subscriptions/@{linkedService().subscriptionId}/resourceGroups/@{linkedService().resourceGroup}/providers/Microsoft.Databricks/workspaces/@{linkedService().workspaceName}"
+    },
+    "parameters": {
+      "workspaceUrl": {
+        "type": "String"
+      },
+      "workspaceName": {
+        "type": "String"
+      },
+      "clusterId": {
+        "type": "String"
+      },
+      "subscriptionId": {
+        "type": "String"
+      },
+      "resourceGroup": {
+        "type": "String"
+      }
+    }
+  }
+}

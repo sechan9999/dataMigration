@@ -1,0 +1,24 @@
+{
+  "name": "ls_target_sql_analytics",
+  "type": "Microsoft.DataFactory/factories/linkedservices",
+  "properties": {
+    "annotations": [],
+    "type": "AzureSqlDatabase",
+    "typeProperties": {
+      "connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=@{linkedService().serverName}.database.windows.net;Initial Catalog=@{linkedService().databaseName}",
+      "azureCloudType": "AzureCloud",
+      "credential": {
+        "referenceName": "ManagedIdentityCredential",
+        "type": "CredentialReference"
+      }
+    },
+    "parameters": {
+      "serverName": {
+        "type": "String"
+      },
+      "databaseName": {
+        "type": "String"
+      }
+    }
+  }
+}

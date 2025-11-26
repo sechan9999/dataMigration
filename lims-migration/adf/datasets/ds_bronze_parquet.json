@@ -1,0 +1,51 @@
+{
+  "name": "ds_bronze_parquet",
+  "properties": {
+    "linkedServiceName": {
+      "referenceName": "ls_data_lake",
+      "type": "LinkedServiceReference",
+      "parameters": {
+        "storageAccountName": {
+          "value": "@dataset().storageAccountName",
+          "type": "Expression"
+        }
+      }
+    },
+    "parameters": {
+      "storageAccountName": {
+        "type": "string"
+      },
+      "container": {
+        "type": "string",
+        "defaultValue": "bronze"
+      },
+      "folderPath": {
+        "type": "string"
+      },
+      "fileName": {
+        "type": "string"
+      }
+    },
+    "annotations": [],
+    "type": "Parquet",
+    "typeProperties": {
+      "location": {
+        "type": "AzureBlobFSLocation",
+        "fileName": {
+          "value": "@dataset().fileName",
+          "type": "Expression"
+        },
+        "folderPath": {
+          "value": "@dataset().folderPath",
+          "type": "Expression"
+        },
+        "fileSystem": {
+          "value": "@dataset().container",
+          "type": "Expression"
+        }
+      },
+      "compressionCodec": "snappy"
+    }
+  },
+  "type": "Microsoft.DataFactory/factories/datasets"
+}

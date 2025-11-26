@@ -1,0 +1,182 @@
+{
+  "azure": {
+    "subscription_id": "${AZURE_SUBSCRIPTION_ID}",
+    "resource_group": "rg-lims-migration-prod",
+    "location": "eastus2",
+    "tags": {
+      "Environment": "Production",
+      "Project": "LIMS Migration",
+      "CostCenter": "IT-Analytics",
+      "Compliance": "HIPAA"
+    }
+  },
+  "data_factory": {
+    "name": "adf-lims-migration-prod",
+    "git_configuration": {
+      "repository_name": "lims-migration",
+      "collaboration_branch": "main",
+      "root_folder": "/lims-migration/adf"
+    }
+  },
+  "data_lake": {
+    "storage_account_name": "sadatalakeprod",
+    "container_bronze": "bronze",
+    "container_silver": "silver",
+    "container_gold": "gold",
+    "lims_path": {
+      "lab_results": "lims/lab_results",
+      "patients": "lims/patients",
+      "tests": "lims/tests",
+      "specimens": "lims/specimens",
+      "orders": "lims/orders"
+    }
+  },
+  "databricks": {
+    "workspace_name": "dbw-lims-analytics-prod",
+    "workspace_url": "https://adb-xxxxx.azuredatabricks.net",
+    "cluster_config": {
+      "cluster_name": "lims-etl-cluster",
+      "spark_version": "13.3.x-scala2.12",
+      "node_type_id": "Standard_DS4_v2",
+      "autoscale": {
+        "min_workers": 2,
+        "max_workers": 8
+      },
+      "spark_conf": {
+        "spark.databricks.delta.optimizeWrite.enabled": "true",
+        "spark.databricks.delta.autoCompact.enabled": "true",
+        "spark.sql.adaptive.enabled": "true"
+      },
+      "init_scripts": [
+        "dbfs:/scripts/install_clinical_libs.sh"
+      ]
+    },
+    "notebooks": {
+      "bronze_to_silver": "/Workspace/LIMS/bronze_to_silver",
+      "silver_to_gold": "/Workspace/LIMS/silver_to_gold",
+      "clinical_validation": "/Workspace/LIMS/validation",
+      "ml_anomaly_detection": "/Workspace/LIMS/ml"
+    }
+  },
+  "sql_database": {
+    "server_name": "sql-lims-analytics-prod",
+    "database_name": "LIMS_Analytics",
+    "admin_user": "${SQL_ADMIN_USER}",
+    "elastic_pool": {
+      "name": "pool-analytics",
+      "sku": {
+        "name": "GP_Gen5",
+        "tier": "GeneralPurpose",
+        "capacity": 4
+      }
+    }
+  },
+  "source_lims": {
+    "server": "${LIMS_SQL_SERVER}",
+    "database": "LIMS_Production",
+    "authentication": "ManagedIdentity",
+    "cdc_enabled": true,
+    "tables": [
+      {
+        "schema": "dbo",
+        "table": "LabResults",
+        "watermark_column": "ModifiedDate",
+        "partition_column": "ResultDate"
+      },
+      {
+        "schema": "dbo",
+        "table": "Patients",
+        "watermark_column": "ModifiedDate",
+        "partition_column": null
+      },
+      {
+        "schema": "dbo",
+        "table": "TestMaster",
+        "watermark_column": "ModifiedDate",
+        "partition_column": null
+      },
+      {
+        "schema": "dbo",
+        "table": "Specimens",
+        "watermark_column": "ModifiedDate",
+        "partition_column": "CollectionDate"
+      },
+      {
+        "schema": "dbo",
+        "table": "Orders",
+        "watermark_column": "ModifiedDate",
+        "partition_column": "OrderDate"
+      }
+    ]
+  },
+  "clinical_validation": {
+    "reference_ranges": {
+      "enabled": true,
+      "loinc_mapping": true,
+      "age_gender_specific": true
+    },
+    "critical_values": {
+      "enabled": true,
+      "alert_threshold_minutes": 15
+    },
+    "temporal_validation": {
+      "enabled": true,
+      "max_change_percent": 200
+    },
+    "cross_test_correlation": {
+      "enabled": true,
+      "correlation_pairs": [
+        ["Glucose", "HbA1c"],
+        ["BUN", "Creatinine"],
+        ["TSH", "FreeT4"]
+      ]
+    }
+  },
+  "data_quality": {
+    "completeness_threshold": 0.95,
+    "conformity_threshold": 0.99,
+    "freshness_threshold_hours": 2,
+    "duplicate_check_enabled": true,
+    "loinc_validation_enabled": true
+  },
+  "ml_anomaly_detection": {
+    "enabled": true,
+    "model_type": "IsolationForest",
+    "contamination_rate": 0.05,
+    "features": [
+      "result_value_numeric",
+      "result_vs_reference_min",
+      "result_vs_reference_max",
+      "time_since_last_test",
+      "test_frequency"
+    ],
+    "retrain_schedule": "0 0 * * 0",
+    "scoring_threshold": 0.75
+  },
+  "power_bi": {
+    "workspace_name": "LIMS Analytics",
+    "dataset_refresh_schedule": "0 */4 * * *",
+    "gateway_cluster": "gateway-prod-01"
+  },
+  "monitoring": {
+    "log_analytics_workspace": "law-lims-monitoring-prod",
+    "alert_email": "lims-alerts@organization.com",
+    "alert_rules": [
+      {
+        "name": "Pipeline Failure",
+        "severity": "Critical",
+        "condition": "pipeline_status == 'Failed'"
+      },
+      {
+        "name": "Data Quality Below Threshold",
+        "severity": "High",
+        "condition": "quality_score < 0.95"
+      },
+      {
+        "name": "Critical Value Alert",
+        "severity": "Critical",
+        "condition": "critical_value_detected == true"
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+# LIMS Migration - Python Dependencies
+
+# Azure SDK
+azure-identity==1.15.0
+azure-mgmt-datafactory==4.0.0
+azure-mgmt-storage==21.1.0
+azure-mgmt-resource==23.0.1
+azure-storage-blob==12.19.0
+
+# Databricks
+databricks-cli==0.18.0
+databricks-sdk==0.18.0
+
+# Database
+pyodbc==5.0.1
+sqlalchemy==2.0.25
+
+# Data Processing
+pandas==2.1.4
+numpy==1.26.3
+pyspark==3.5.0
+
+# Machine Learning
+scikit-learn==1.4.0
+mlflow==2.10.0
+
+# Utilities
+python-dotenv==1.0.0
+pyyaml==6.0.1
+requests==2.31.0
+
+# Development
+pytest==7.4.4
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0
