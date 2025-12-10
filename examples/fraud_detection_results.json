@@ -1,0 +1,111 @@
+{
+  "summary": {
+    "total_alerts": 5,
+    "by_risk_level": {
+      "high": 4,
+      "medium": 1
+    },
+    "by_fraud_type": {
+      "hit_and_run": 2,
+      "upcoding": 3
+    },
+    "top_flagged_providers": [
+      {
+        "npi": "2055490208",
+        "alert_count": 1
+      },
+      {
+        "npi": "4527161033",
+        "alert_count": 1
+      },
+      {
+        "npi": "3486034585",
+        "alert_count": 1
+      },
+      {
+        "npi": "8981526323",
+        "alert_count": 1
+      },
+      {
+        "npi": "9083374457",
+        "alert_count": 1
+      }
+    ],
+    "flagged_claims_count": 17,
+    "flagged_amount_total": 4223.49,
+    "claims_analyzed": 300,
+    "providers_analyzed": 30
+  },
+  "providers_analyzed": 30,
+  "claims_processed": 300,
+  "execution_time_seconds": 0.00455,
+  "total_alerts": 5,
+  "alerts": [
+    {
+      "alert_id": "9c0b3660-8e73-4b9f-a11f-2d52eb5f3ecf",
+      "fraud_type": "hit_and_run",
+      "risk_level": "high",
+      "confidence_score": 0.75,
+      "provider_npi": "2055490208",
+      "claim_count": 4,
+      "description": "Volume spike in 2024-06: 4 claims vs baseline 1",
+      "observed_value": 4,
+      "expected_value": 1.25,
+      "recommended_action": "Immediate review - potential hit-and-run scheme if new provider",
+      "created_at": "2025-12-10T15:14:34.642756"
+    },
+    {
+      "alert_id": "86a84922-6763-4180-89d1-a150232a6b68",
+      "fraud_type": "hit_and_run",
+      "risk_level": "high",
+      "confidence_score": 0.75,
+      "provider_npi": "4527161033",
+      "claim_count": 4,
+      "description": "Volume spike in 2024-09: 4 claims vs baseline 1",
+      "observed_value": 4,
+      "expected_value": 1.25,
+      "recommended_action": "Immediate review - potential hit-and-run scheme if new provider",
+      "created_at": "2025-12-10T15:14:34.644363"
+    },
+    {
+      "alert_id": "7993aad3-9a38-45d9-8d9f-03c4499a834a",
+      "fraud_type": "upcoding",
+      "risk_level": "high",
+      "confidence_score": 0.6024922359499622,
+      "provider_npi": "3486034585",
+      "claim_count": 3,
+      "description": "Volume spike in 2024-12: 3 claims vs baseline 1",
+      "observed_value": 3,
+      "expected_value": 1.2,
+      "recommended_action": "Immediate review - potential hit-and-run scheme if new provider",
+      "created_at": "2025-12-10T15:14:34.642657"
+    },
+    {
+      "alert_id": "3ad88d5e-fbee-4f08-928a-f85d800944c6",
+      "fraud_type": "upcoding",
+      "risk_level": "high",
+      "confidence_score": 0.6024922359499622,
+      "provider_npi": "8981526323",
+      "claim_count": 3,
+      "description": "Volume spike in 2024-09: 3 claims vs baseline 1",
+      "observed_value": 3,
+      "expected_value": 1.2,
+      "recommended_action": "Immediate review - potential hit-and-run scheme if new provider",
+      "created_at": "2025-12-10T15:14:34.643261"
+    },
+    {
+      "alert_id": "535c4e9e-b4ab-44bd-8e1c-3acb1e014232",
+      "fraud_type": "upcoding",
+      "risk_level": "medium",
+      "confidence_score": 0.5513240262614719,
+      "provider_npi": "9083374457",
+      "claim_count": 3,
+      "description": "Volume spike in 2024-12: 3 claims vs baseline 1",
+      "observed_value": 3,
+      "expected_value": 1.2857142857142858,
+      "recommended_action": "Immediate review - potential hit-and-run scheme if new provider",
+      "created_at": "2025-12-10T15:14:34.643871"
+    }
+  ],
+  "errors": []
+}
